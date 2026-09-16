@@ -1,25 +1,14 @@
-# 📚 AI PDF Chatbot with RAG
+# AI PDF Chatbot with RAG
 
 An intelligent multi-PDF Question & Answering chatbot built with **Streamlit**, **LangChain**, **FAISS**, and **Google Gemini**.
 
 Upload one or multiple PDF files, ask natural language questions, and get accurate, context-grounded answers powered by Retrieval-Augmented Generation (RAG).
 
-🌐 **Live Demo:** [AI PDF Chatbot on Streamlit](https://ai-pdf-chatbot-with-rag-gaiwgvphjfh8uduubzw65l.streamlit.app/)
+**Live Demo:** [AI PDF Chatbot on Streamlit](https://ai-pdf-chatbot-with-rag-gaiwgvphjfh8uduubzw65l.streamlit.app/)
 
 ---
 
-## 🚀 Features
-
-- **Multi-Document Support:** Upload and query across multiple PDF documents simultaneously.
-- **Accurate Context Retrieval:** Chunks documents and searches semantically relevant sections using **FAISS** vector search.
-- **Cost-Efficient Local Embeddings:** Uses Hugging Face's `sentence-transformers/all-MiniLM-L6-v2` to generate vector embeddings locally without extra API costs.
-- **Hallucination-Resistant QA:** Powered by Google's **Gemini 2.0 Flash** with strict prompt constraints to only answer from provided PDF context.
-- **Interactive Chat UI:** Clean conversation view with custom user/bot styling.
-- **Chat History & Export:** Keeps track of previous questions and answers with timestamps, with an option to download conversation history as a **CSV file**.
-
----
-
-## 🏗️ Architecture & How It Works
+##  Architecture & How It Works
 
 ```mermaid
 flowchart TD
@@ -28,14 +17,14 @@ flowchart TD
     C --> D[Generate Embeddings\nHuggingFace all-MiniLM-L6-v2]
     D --> E[(FAISS Vector Store\nfaiss_index)]
     
-    F[💬 User Question] --> G[Similarity Search]
+    F[ User Question] --> G[Similarity Search]
     E --> G
     G --> H[Top Relevant Chunks]
     
     H --> I[Prompt Template\nContext + Question]
     F --> I
     I --> J[Google Gemini 2.0 Flash\nLLM]
-    J --> K[✅ Context-Grounded Answer]
+    J --> K[ Context-Grounded Answer]
 ```
 
 1. **Extraction**: `PyPDF2` reads all pages across all uploaded PDF documents and compiles raw text.
@@ -46,7 +35,7 @@ flowchart TD
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Frontend / Framework:** [Streamlit](https://streamlit.io/)
 - **RAG Orchestration:** [LangChain](https://www.langchain.com/)
@@ -57,7 +46,7 @@ flowchart TD
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```text
 ├── app.py              # Main Streamlit web application & RAG pipeline
@@ -101,7 +90,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🖥️ Running the Application
+##  Running the Application
 
 Launch the Streamlit app:
 ```bash
@@ -115,6 +104,3 @@ streamlit run app.py
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
