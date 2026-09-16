@@ -39,7 +39,13 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Pre-built chain that feeds relevant context documents into an LLM along with the user question
-from langchain.chains.question_answering import load_qa_chain
+try:
+    from langchain.chains.question_answering import load_qa_chain
+except ImportError:
+    try:
+        from langchain_classic.chains.question_answering import load_qa_chain
+    except ImportError:
+        load_qa_chain = None
 
 # Template to guide the LLM's behavior and response style
 try:
@@ -175,9 +181,13 @@ def get_conversational_chain(model_name, vectorstore=None, api_key=None):
         # Define prompt variables
         prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
         
-        # 'stuff' chain type takes all retrieved context documents and inserts ('stuffs') them into the prompt
-        chain = load_qa_chain(model, chain_type="stuff", prompt=prompt)
-        return chain
+        # Use load_qa_chain if available, otherwise return an LCEL runnable (prompt | model)
+        if load_qa_chain is not None:
+            try:
+                return load_qa_chain(model, chain_type="stuff", prompt=prompt)
+            except Exception:
+                pass
+        return prompt | model
 
 
 # ------------------------------------------------------------------------------
@@ -221,10 +231,15 @@ def user_input(user_question, model_name, api_key, pdf_docs, conversation_histor
         
         # Get the Gemini QA chain and run inference
         chain = get_conversational_chain("Google AI", vectorstore=new_db, api_key=api_key)
-        response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
         
-        user_question_output = user_question
-        response_output = response['output_text']
+        # Support both legacy load_qa_chain dictionary call and modern LCEL chain invoke
+        try:
+            response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
+            response_output = response.get('output_text', '')
+        except (TypeError, AttributeError):
+            context = "\n\n".join([doc.page_content for doc in docs])
+            response = chain.invoke({"context": context, "question": user_question})
+            response_output = response.content if hasattr(response, "content") else str(response)
         
         # Record this turn in the conversation history
         pdf_names = [pdf.name for pdf in pdf_docs] if pdf_docs else []
