@@ -152,18 +152,19 @@ def get_vector_store(text_chunks, model_name, api_key=None):
 # ------------------------------------------------------------------------------
 # STEP 4: Build Question-Answering Prompt & LLM Chain
 # ------------------------------------------------------------------------------
-def get_conversational_chain(model_name, vectorstore=None, api_key=None):
+def get_conversational_chain(model_name, gemini_model="gemini-1.5-flash", vectorstore=None, api_key=None):
     """
     Prepares the Google Gemini LLM with a strict prompt template that forces it
     to answer using ONLY the provided PDF context, reducing hallucinations.
     
     Args:
         model_name (str): Selected model provider.
+        gemini_model (str): Google Gemini model identifier (defaults to 'gemini-1.5-flash').
         vectorstore (FAISS, optional): The vector store instance.
         api_key (str, optional): User's Google Gemini API key.
     
     Returns:
-        Chain: A LangChain QA chain ready to answer questions.
+        Chain: A LangChain QA chain or LCEL runnable ready to answer questions.
     """
     if model_name == "Google AI":
         # Prompt instructs the model to only use the context and not invent facts
@@ -175,8 +176,8 @@ def get_conversational_chain(model_name, vectorstore=None, api_key=None):
 
         Answer:
         """
-        # Initialize Google Gemini Flash model with low temperature (0.3) for factual answers
-        model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0.3, google_api_key=api_key)
+        # Initialize Google Gemini model with low temperature (0.3) for factual answers
+        model = ChatGoogleGenerativeAI(model=gemini_model, temperature=0.3, google_api_key=api_key)
         
         # Define prompt variables
         prompt = PromptTemplate(template=prompt_template, input_variables=["context", "question"])
@@ -219,7 +220,7 @@ def user_input(user_question, model_name, api_key, pdf_docs, conversation_histor
     vector_store = get_vector_store(text_chunks, model_name, api_key)
     
     user_question_output = ""
-    response_output = ""
+    response_output = None
     
     if model_name == "Google AI":
         # Load the saved FAISS vector store with HuggingFace embeddings
@@ -228,19 +229,35 @@ def user_input(user_question, model_name, api_key, pdf_docs, conversation_histor
         
         # Find the text chunks most semantically similar to the user question
         docs = new_db.similarity_search(user_question)
+        context = "\n\n".join([doc.page_content for doc in docs])
         
-        # Get the Gemini QA chain and run inference
-        chain = get_conversational_chain("Google AI", vectorstore=new_db, api_key=api_key)
-        
-        # Support both legacy load_qa_chain dictionary call and modern LCEL chain invoke
-        try:
-            response = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
-            response_output = response.get('output_text', '')
-        except (TypeError, AttributeError):
-            context = "\n\n".join([doc.page_content for doc in docs])
-            response = chain.invoke({"context": context, "question": user_question})
-            response_output = response.content if hasattr(response, "content") else str(response)
-        
+        # Try supported Gemini models in sequence with fallback
+        candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash", "gemini-pro"]
+        last_error = None
+
+        for candidate in candidate_models:
+            try:
+                chain = get_conversational_chain("Google AI", gemini_model=candidate, vectorstore=new_db, api_key=api_key)
+                
+                # Support both legacy load_qa_chain dictionary call and modern LCEL chain invoke
+                try:
+                    res = chain({"input_documents": docs, "question": user_question}, return_only_outputs=True)
+                    response_output = res.get('output_text', '')
+                except (TypeError, AttributeError):
+                    res = chain.invoke({"context": context, "question": user_question})
+                    response_output = res.content if hasattr(res, "content") else str(res)
+
+                if response_output:
+                    break
+            except Exception as err:
+                last_error = err
+                continue
+
+        if not response_output:
+            st.error(f"Unable to generate response from Google AI: {last_error}")
+            return
+
+        user_question_output = user_question
         # Record this turn in the conversation history
         pdf_names = [pdf.name for pdf in pdf_docs] if pdf_docs else []
         conversation_history.append((
