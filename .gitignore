@@ -2,3 +2,6 @@ myenv
 .env
 faiss_index
 .venv
+__pycache__/
+*.pyc
+*.pyo
