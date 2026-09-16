@@ -371,8 +371,8 @@ def main():
     Main function setting up page configuration, the sidebar controls,
     PDF upload widget, and user input box.
     """
-    st.set_page_config(page_title="Chat with multiple PDFs", page_icon=":books:")
-    st.header("Chat with multiple PDFs (v1) :books:")
+    st.set_page_config(page_title="Chat with multiple PDFs")
+    st.header("Chat with multiple PDFs")
 
     # Initialize chat history in Streamlit session state so it persists across re-renders
     if 'conversation_history' not in st.session_state:
