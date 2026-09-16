@@ -8,9 +8,6 @@ Upload one or multiple PDF files, ask natural language questions, and get accura
 
 ---
 
-<p align="center">
-  <img src="https://ibb.co/xKnLDrH" alt="Logo" width="400">
-</p>
 
 <a href="https://ibb.co/xKnLDrHL"><img src="https://i.ibb.co/6cKwmqBw/Screenshot-2026-09-16-133055.png" alt="Screenshot-2026-09-16-133055" border="0" /></a>
 
