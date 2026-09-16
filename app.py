@@ -24,7 +24,10 @@ from datetime import datetime    # Timestamp tracking for chat messages and CSV 
 
 # --- LangChain & RAG Components ---
 # Splits large documents into smaller pieces with overlap so context isn't lost at borders
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
 
 # Vector store to store embeddings and perform fast similarity search
 from langchain_community.vectorstores import FAISS
@@ -39,7 +42,10 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.chains.question_answering import load_qa_chain
 
 # Template to guide the LLM's behavior and response style
-from langchain.prompts import PromptTemplate
+try:
+    from langchain_core.prompts import PromptTemplate
+except ImportError:
+    from langchain.prompts import PromptTemplate
 
 import asyncio
 
